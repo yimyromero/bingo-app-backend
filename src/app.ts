@@ -7,11 +7,15 @@ import { bingo } from "./models/bingo.ts";
 import { dbConn } from "./config/dbConn.ts";
 import morgan from "morgan";
 import { rateLimiter } from "./middleware/limiter.ts";
+import bodyParser from "body-parser";
+
+import { userRouter } from "./routes/userRoutes.ts";
 
 const __dirname = getDirname(import.meta.url);
 
 const app = express();
 
+app.use(bodyParser.json());
 // logger
 app.use(morgan("dev"));
 
@@ -28,6 +32,8 @@ app.use(cookieParser());
 app.use("/", express.static(path.join(__dirname, "public")));
 
 app.get("/", router);
+
+app.use("/users", userRouter);
 
 app.post("/bingo", async (req, res) => {
 	try {
