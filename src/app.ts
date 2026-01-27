@@ -10,6 +10,7 @@ import { rateLimiter } from "./middleware/limiter.ts";
 import bodyParser from "body-parser";
 
 import { userRouter } from "./routes/userRoutes.ts";
+import { errorHandler } from "./middleware/errorHandler.ts";
 
 const __dirname = getDirname(import.meta.url);
 
@@ -61,5 +62,7 @@ app.all("/*splat", (req, res) => {
 		res.type("txt").send("404 Not found");
 	}
 });
+
+app.use(errorHandler);
 
 export default app;
