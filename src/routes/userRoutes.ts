@@ -8,6 +8,7 @@ const userRouter = express.Router();
 userRouter
 	.route("/")
 	.get(usersController.getAllUsers)
-	.post(validate(userRegistrationSchema), usersController.createNewUser);
+	.post(validate(userRegistrationSchema), usersController.createNewUser)
+	.patch(usersController.updateUser);
 
 export { userRouter };

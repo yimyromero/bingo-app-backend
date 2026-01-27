@@ -1,6 +1,6 @@
 import { dbConn } from "@/config/dbConn.ts";
 import { users } from "@/models/users.ts";
-import { getTableColumns } from "drizzle-orm";
+import { eq, getTableColumns } from "drizzle-orm";
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 
@@ -34,8 +34,47 @@ const createNewUser = async (req: Request, res: Response) => {
 		.returning();
 
 	return res.status(201).json(created);
-
-	//res.status(201).json({ message: "User created successfully" });
 };
 
-export { getAllUsers, createNewUser };
+const updateUser = async (req: Request, res: Response) => {
+	const { id, email, password_hash, name, roles, active } = req.body;
+
+	// check fields are in the body
+	if (!id || !email || !name || !roles || !active) {
+		return res.status(400).json({ message: "All fields are required." });
+	}
+
+	const [user] = await dbConn.select().from(users).where(eq(users.id, id));
+
+	if (!user) {
+		return res.status(400).json({ message: "User doesn't exist." });
+	}
+
+	//user.id = id;
+	user.email = email;
+	user.name = name;
+	user.roles = roles;
+	user.active = active;
+
+	if (password_hash) {
+		user.password_hash = await bcrypt.hash(password_hash, 10);
+	}
+
+	const [updatedUserEmail]: { email: string }[] = await dbConn
+		.update(users)
+		.set({
+			email: user.email,
+			password_hash: user.password_hash,
+			name: user.name,
+			roles: user.roles,
+			active: user.active,
+		})
+		.where(eq(users.id, id))
+		.returning({ email: users.email });
+
+	if (updatedUserEmail) {
+		res.json({ message: `${email} updated.` });
+	}
+};
+
+export { getAllUsers, createNewUser, updateUser };
