@@ -6,7 +6,7 @@ import {
 	varchar,
 	unique,
 } from "drizzle-orm/pg-core";
-import { bingo } from "./bingo.ts";
+import { bingo } from "./bingos.ts";
 
 export const bingoDetails = pgTable(
 	"bingo_details",

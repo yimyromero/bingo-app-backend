@@ -10,7 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { users } from "./users.ts";
 
-export const bingo = pgTable(
+export const bingos = pgTable(
 	"bingo",
 	{
 		id: integer().primaryKey().generatedAlwaysAsIdentity(),

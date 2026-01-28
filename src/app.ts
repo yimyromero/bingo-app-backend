@@ -3,7 +3,7 @@ import { getDirname } from "./utils/utils.js";
 import { router } from "./routes/root.ts";
 import cookieParser from "cookie-parser";
 import path from "path";
-import { bingo } from "./models/bingo.ts";
+import { bingos } from "./models/bingos.ts";
 import { dbConn } from "./config/dbConn.ts";
 import morgan from "morgan";
 import { rateLimiter } from "./middleware/limiter.ts";
@@ -11,6 +11,7 @@ import bodyParser from "body-parser";
 
 import { userRouter } from "./routes/userRoutes.ts";
 import { errorHandler } from "./middleware/errorHandler.ts";
+import { bingoRouter } from "./routes/bingoRoutes.ts";
 
 const __dirname = getDirname(import.meta.url);
 
@@ -35,13 +36,14 @@ app.use("/", express.static(path.join(__dirname, "public")));
 app.get("/", router);
 
 app.use("/users", userRouter);
+app.use("/bingos", bingoRouter);
 
 app.post("/bingo", async (req, res) => {
 	try {
 		const { userId, title, gridSize } = req.body;
 
 		const [created] = await dbConn
-			.insert(bingo)
+			.insert(bingos)
 			.values({ userId, title, gridSize })
 			.returning();
 
