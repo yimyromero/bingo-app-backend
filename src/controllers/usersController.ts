@@ -3,6 +3,7 @@ import { users } from "@/models/users.ts";
 import { eq, getTableColumns } from "drizzle-orm";
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
+import type { number } from "zod";
 
 // @desc Get all users
 // @route GET /users
@@ -13,13 +14,14 @@ const getAllUsers = async (req: Request, res: Response) => {
 
 	res.json(result);
 };
+
 // @desc Insert a user
 // @route POST /users
 const createNewUser = async (req: Request, res: Response) => {
 	const { email, password_hash, name, roles } = req.body;
 
 	if (!email || !password_hash) {
-		return res.status(400).json({ message: "All fields are required" });
+		return res.status(400).json({ message: "All fields are required." });
 	}
 
 	const hashedPwd = await bcrypt.hash(password_hash, 10);
@@ -36,6 +38,8 @@ const createNewUser = async (req: Request, res: Response) => {
 	return res.status(201).json(created);
 };
 
+// @desc Update a user
+// @route PATCH /users
 const updateUser = async (req: Request, res: Response) => {
 	const { id, email, password_hash, name, roles, active } = req.body;
 
@@ -77,4 +81,25 @@ const updateUser = async (req: Request, res: Response) => {
 	}
 };
 
-export { getAllUsers, createNewUser, updateUser };
+// @desc Update a user
+// @route DELETE/users
+const deleteUser = async (req: Request, res: Response) => {
+	const { id } = req.body;
+
+	if (!id) {
+		return res.status(400).json({ message: "User Id required." });
+	}
+
+	const [deletedUserId]: { deletedId: number }[] = await dbConn
+		.delete(users)
+		.where(eq(users.id, id))
+		.returning({ deletedId: users.id });
+
+	if (!deletedUserId) {
+		return res.status(400).json({ message: `User id:${id} doesn't exist.` });
+	}
+
+	res.json({ message: `User ${deletedUserId.deletedId} deleted.` });
+};
+
+export { getAllUsers, createNewUser, updateUser, deleteUser };

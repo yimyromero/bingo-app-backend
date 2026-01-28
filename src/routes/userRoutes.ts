@@ -9,6 +9,7 @@ userRouter
 	.route("/")
 	.get(usersController.getAllUsers)
 	.post(validate(userRegistrationSchema), usersController.createNewUser)
-	.patch(usersController.updateUser);
+	.patch(usersController.updateUser)
+	.delete(usersController.deleteUser);
 
 export { userRouter };
