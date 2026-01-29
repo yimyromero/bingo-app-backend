@@ -32,4 +32,19 @@ const getAllBingos = async (req: Request, res: Response) => {
 	res.json({ data: result, meta: { offset, limit } });
 };
 
-export { getAllBingos };
+/**
+ * Add a bingo record
+ * @route POST /bingos
+ */
+const createNewBingo = async (req: Request, res: Response) => {
+	const { userId, title, gridSize, raffleDate, isDone } = req.body;
+
+	const [created] = await dbConn
+		.insert(bingos)
+		.values({ userId, title, gridSize, raffleDate, isDone })
+		.returning();
+
+	return res.status(201).json(created);
+};
+
+export { getAllBingos, createNewBingo };

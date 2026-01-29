@@ -38,22 +38,6 @@ app.get("/", router);
 app.use("/users", userRouter);
 app.use("/bingos", bingoRouter);
 
-app.post("/bingo", async (req, res) => {
-	try {
-		const { userId, title, gridSize } = req.body;
-
-		const [created] = await dbConn
-			.insert(bingos)
-			.values({ userId, title, gridSize })
-			.returning();
-
-		return res.status(201).json(created);
-	} catch (err) {
-		console.error("DB ERROR", err);
-		return res.status(500).json({ error: "Failed to crate bingo" });
-	}
-});
-
 app.all("/*splat", (req, res) => {
 	res.status(404);
 	if (req.accepts("html")) {
