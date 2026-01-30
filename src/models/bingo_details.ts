@@ -6,14 +6,14 @@ import {
 	varchar,
 	unique,
 } from "drizzle-orm/pg-core";
-import { bingo } from "./bingos.ts";
+import { bingos } from "./bingos.ts";
 
 export const bingoDetails = pgTable(
 	"bingo_details",
 	{
 		id: integer().primaryKey().generatedAlwaysAsIdentity(),
 		bingoId: integer()
-			.references(() => bingo.id)
+			.references(() => bingos.id)
 			.notNull(),
 		cellNumber: integer().notNull(),
 		participantName: varchar({ length: 255 }).notNull(),

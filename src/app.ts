@@ -12,6 +12,7 @@ import bodyParser from "body-parser";
 import { userRouter } from "./routes/userRoutes.ts";
 import { errorHandler } from "./middleware/errorHandler.ts";
 import { bingoRouter } from "./routes/bingoRoutes.ts";
+import { bingoDetailsRouter } from "./routes/bingoDetailsController.ts";
 
 const __dirname = getDirname(import.meta.url);
 
@@ -37,6 +38,7 @@ app.get("/", router);
 
 app.use("/users", userRouter);
 app.use("/bingos", bingoRouter);
+app.use("/bingo-details", bingoDetailsRouter);
 
 app.all("/*splat", (req, res) => {
 	res.status(404);
