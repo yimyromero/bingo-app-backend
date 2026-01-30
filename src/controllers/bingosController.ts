@@ -47,4 +47,34 @@ const createNewBingo = async (req: Request, res: Response) => {
 	return res.status(201).json(created);
 };
 
-export { getAllBingos, createNewBingo };
+/**
+ * Update a bingo record
+ * @route PATCH /bingos
+ */
+const updateBingo = async (req: Request, res: Response) => {
+	const { id, userId, title, gridSize, raffleDate, isDone } = req.body;
+
+	const [bingo] = await dbConn.select(id).from(bingos).where(eq(bingos.id, id));
+
+	if (!bingo) {
+		return res.status(400).json({ message: "bingo record doesn't exist." });
+	}
+
+	bingo.userId = userId;
+	bingo.title = title;
+	bingo.gridSize = gridSize;
+	bingo.raffleDate = raffleDate;
+	bingo.isDone = isDone;
+
+	const [updatedBingo]: { updatedId: Number }[] = await dbConn
+		.update(bingos)
+		.set(bingo)
+		.where(eq(bingos.id, id))
+		.returning({ updatedId: bingos.id });
+
+	res.json({
+		message: `bingo ${updatedBingo?.updatedId} updated.`,
+	});
+};
+
+export { getAllBingos, createNewBingo, updateBingo };
