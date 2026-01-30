@@ -9,6 +9,7 @@ bingoRouter
 	.route("/")
 	.get(bingosController.getAllBingos)
 	.post(validate(createBingoSchema), bingosController.createNewBingo)
-	.patch(validate(updateBingoSchema), bingosController.updateBingo);
+	.patch(validate(updateBingoSchema), bingosController.updateBingo)
+	.delete(bingosController.deleteBingo);
 
 export { bingoRouter };

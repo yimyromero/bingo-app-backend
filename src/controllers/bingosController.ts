@@ -77,4 +77,23 @@ const updateBingo = async (req: Request, res: Response) => {
 	});
 };
 
-export { getAllBingos, createNewBingo, updateBingo };
+const deleteBingo = async (req: Request, res: Response) => {
+	const { id } = req.body;
+
+	if (!id) {
+		return res.status(400).json({ message: "Bingo id is required." });
+	}
+
+	const [deletedBingo]: { deletedId: Number }[] = await dbConn
+		.delete(bingos)
+		.where(eq(bingos.id, id))
+		.returning({ deletedId: bingos.id });
+
+	if (!deletedBingo) {
+		return res.status(400).json({ message: `Bingo id:${id} doesn't exist.` });
+	}
+
+	res.json({ message: `Bingo ${deletedBingo.deletedId} deleted.` });
+};
+
+export { getAllBingos, createNewBingo, updateBingo, deleteBingo };
