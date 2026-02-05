@@ -16,7 +16,7 @@ export const bingoDetails = pgTable(
 			.references(() => bingos.id)
 			.notNull(),
 		cellNumber: integer().notNull(),
-		participantName: varchar({ length: 255 }).notNull(),
+		participantName: varchar({ length: 255 }),
 		createdAt: timestamp().defaultNow(),
 	},
 	(table) => [

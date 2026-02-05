@@ -1,7 +1,9 @@
 import { dbConn } from "@/config/dbConn.ts";
+import { bingoDetails } from "@/models/bingo_details.ts";
 import { bingos } from "@/models/bingos.ts";
 import { users } from "@/models/users.ts";
 import { paginationSchema } from "@/schemas/paginationSchema.ts";
+import { isArrayEmpty } from "@/utils/utils.ts";
 import { eq } from "drizzle-orm";
 import type { Request, Response } from "express";
 import z from "zod";
@@ -39,12 +41,26 @@ const getAllBingos = async (req: Request, res: Response) => {
 const createNewBingo = async (req: Request, res: Response) => {
 	const { userId, title, gridSize, raffleDate, isDone } = req.body;
 
-	const [created] = await dbConn
-		.insert(bingos)
-		.values({ userId, title, gridSize, raffleDate, isDone })
-		.returning();
+	await dbConn.transaction(async (tx) => {
+		const result = await tx
+			.insert(bingos)
+			.values({ userId, title, gridSize, raffleDate, isDone })
+			.returning({ id: bingos.id, gridSize: bingos.gridSize });
 
-	return res.status(201).json(created);
+		if (!result[0]) {
+			throw new Error("Failed to create bingo.");
+		}
+		const createdBingo = result[0];
+		const cells = Array.from({ length: createdBingo.gridSize }, (_, i) => ({
+			bingoId: createdBingo?.id || 0,
+			cellNumber: i + 1,
+			participantName: null,
+		}));
+
+		await tx.insert(bingoDetails).values(cells);
+
+		return res.status(201).json(createdBingo);
+	});
 };
 
 /**

@@ -1,5 +1,3 @@
-import { integer } from "drizzle-orm/gel-core";
-import { title } from "node:process";
 import { boolean, number, z } from "zod";
 
 export const createBingoSchema = z.object({
@@ -8,7 +6,6 @@ export const createBingoSchema = z.object({
 		title: z.string(),
 		gridSize: z
 			.string()
-			.optional()
 			.transform(Number)
 			.refine((n) => Number.isInteger(n) && n > 0 && n <= 100, {
 				message: "grid size must be between 1 and 100.",
@@ -35,3 +32,18 @@ export const updateBingoSchema = z.object({
 		isDone: boolean().optional(),
 	}),
 });
+
+export const createBingoDetailsSchema = z.object({
+	body: z.object({
+		details: z
+			.array(
+				z.object({
+					cellNumber: z.number().int().positive(),
+					participantName: z.string(),
+				})
+			)
+			.min(1),
+	}),
+});
+
+export type detailType = z.infer<typeof createBingoDetailsSchema>;

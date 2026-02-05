@@ -18,7 +18,7 @@ export const bingos = pgTable(
 			.references(() => users.id)
 			.notNull(),
 		title: varchar({ length: 255 }).notNull(),
-		gridSize: integer().default(25),
+		gridSize: integer().default(25).notNull(),
 		raffleDate: timestamp().defaultNow(),
 		isDone: boolean().default(false),
 		createdAt: timestamp().defaultNow(),

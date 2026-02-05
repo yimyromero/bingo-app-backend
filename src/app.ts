@@ -12,7 +12,7 @@ import bodyParser from "body-parser";
 import { userRouter } from "./routes/userRoutes.ts";
 import { errorHandler } from "./middleware/errorHandler.ts";
 import { bingoRouter } from "./routes/bingoRoutes.ts";
-import { bingoDetailsRouter } from "./routes/bingoDetailsController.ts";
+import { bingoDetailsRouter } from "./routes/bingoDetailsRoutes.ts";
 
 const __dirname = getDirname(import.meta.url);
 
