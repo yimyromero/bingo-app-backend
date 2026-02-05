@@ -46,6 +46,17 @@ export const createBingoDetailsSchema = z.object({
 	}),
 });
 
+export const updateBingoDetailsSchema = z.object({
+	body: z.object({
+		details: z.array(
+			z.object({
+				cellNumber: z.number().int().positive(),
+				participantName: z.string().nullable(),
+			})
+		),
+	}),
+});
+
 const bingoDetailInputSchema =
-	createBingoDetailsSchema.shape.body.shape.details.element;
+	updateBingoDetailsSchema.shape.body.shape.details.element;
 export type BingoDetailInput = z.infer<typeof bingoDetailInputSchema>;
