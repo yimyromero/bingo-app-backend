@@ -46,4 +46,6 @@ export const createBingoDetailsSchema = z.object({
 	}),
 });
 
-export type detailType = z.infer<typeof createBingoDetailsSchema>;
+const bingoDetailInputSchema =
+	createBingoDetailsSchema.shape.body.shape.details.element;
+export type BingoDetailInput = z.infer<typeof bingoDetailInputSchema>;

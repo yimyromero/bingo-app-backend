@@ -4,7 +4,7 @@ import { bingos } from "@/models/bingos.ts";
 import { isArrayEmpty } from "@/utils/utils.ts";
 import { eq, and } from "drizzle-orm";
 import type { Request, Response } from "express";
-import type { detailType } from "@/schemas/bingoSchema.ts";
+import type { BingoDetailInput } from "@/schemas/bingoSchema.ts";
 
 /**
  * Get details(cells) for one bingo
@@ -45,7 +45,7 @@ const createBingoDetailsById = async (req: Request, res: Response) => {
 			.json({ message: "The bingo ID and details are required." });
 	}
 
-	const rows = details.map((row: detailType) => ({ bingoId, ...row }));
+	const rows = details.map((row: BingoDetailInput) => ({ bingoId, ...row }));
 
 	const [created] = await dbConn.insert(bingoDetails).values(rows).returning();
 
@@ -87,7 +87,7 @@ const updateBingoDetailsById = async (req: Request, res: Response) => {
 		}
 
 		await Promise.all(
-			details.map((row: { participantName: string; cellNumber: number }) =>
+			details.map((row: BingoDetailInput) =>
 				tx
 					.update(bingoDetails)
 					.set({ participantName: row.participantName })
