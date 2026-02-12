@@ -15,7 +15,7 @@ export const errorHandler: ErrorRequestHandler = (
 	const mapped = getDbErrorMessage(err);
 
 	if (mapped) {
-		return res.json({
+		return res.status(500).json({
 			message: mapped.message,
 			constraint: mapped.constraint,
 			detail: mapped.detail,

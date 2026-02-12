@@ -8,6 +8,7 @@ import { dbConn } from "./config/dbConn.ts";
 import morgan from "morgan";
 import { rateLimiter } from "./middleware/limiter.ts";
 import bodyParser from "body-parser";
+import cors from "cors";
 
 import { userRouter } from "./routes/userRoutes.ts";
 import { errorHandler } from "./middleware/errorHandler.ts";
@@ -17,6 +18,9 @@ import { bingoDetailsRouter } from "./routes/bingoDetailsRoutes.ts";
 const __dirname = getDirname(import.meta.url);
 
 const app = express();
+
+// cors
+app.use(cors());
 
 app.use(bodyParser.json());
 // logger
