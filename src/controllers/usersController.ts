@@ -12,7 +12,7 @@ const getAllUsers = async (req: Request, res: Response) => {
 
 	const result = await dbConn.select({ ...rest }).from(users);
 
-	res.json(result);
+	res.json({ data: result });
 };
 
 // @desc Insert a user
@@ -35,7 +35,7 @@ const createNewUser = async (req: Request, res: Response) => {
 		})
 		.returning();
 
-	return res.status(201).json(created);
+	return res.status(201).json({ data: created });
 };
 
 // @desc Update a user

@@ -59,7 +59,7 @@ const createNewBingo = async (req: Request, res: Response) => {
 
 		await tx.insert(bingoDetails).values(cells);
 
-		return res.status(201).json(createdBingo);
+		return res.status(201).json({ data: createdBingo });
 	});
 };
 
