@@ -5,7 +5,6 @@ export const createBingoSchema = z.object({
 		userId: z.number(),
 		title: z.string(),
 		gridSize: z
-			.string()
 			.transform(Number)
 			.refine((n) => Number.isInteger(n) && n > 0 && n <= 100, {
 				message: "grid size must be between 1 and 100.",
@@ -22,8 +21,6 @@ export const updateBingoSchema = z.object({
 		userId: z.number(),
 		title: z.string(),
 		gridSize: z
-			.string()
-			.optional()
 			.transform(Number)
 			.refine((n) => Number.isInteger(n) && n > 0 && n <= 100, {
 				message: "grid size must be between 1 and 100.",

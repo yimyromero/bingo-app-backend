@@ -45,7 +45,15 @@ const createNewBingo = async (req: Request, res: Response) => {
 		const result = await tx
 			.insert(bingos)
 			.values({ userId, title, gridSize, raffleDate, isDone })
-			.returning({ id: bingos.id, gridSize: bingos.gridSize });
+			.returning({
+				id: bingos.id,
+				userId: bingos.userId,
+				title: bingos.title,
+				gridSize: bingos.gridSize,
+				raffleDate: bingos.raffleDate,
+				idDone: bingos.isDone,
+				createdAt: bingos.createdAt,
+			});
 
 		if (!result[0]) {
 			throw new Error("Failed to create bingo.");
