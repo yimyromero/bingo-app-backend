@@ -54,6 +54,26 @@ export const updateBingoDetailsSchema = z.object({
 	}),
 });
 
+export const updateBingoDetailCellSchema = z.object({
+	params: z.object({
+		bingoId: z
+			.string()
+			.transform(Number)
+			.refine((n) => Number.isInteger(n) && n >= 0, {
+				message: "offset must be a non-negative integer.",
+			}),
+		detailId: z
+			.string()
+			.transform(Number)
+			.refine((n) => Number.isInteger(n) && n >= 0, {
+				message: "offset must be a non-negative integer.",
+			}),
+	}),
+	body: z.object({
+		participantName: z.string().nullable(),
+	}),
+});
+
 const bingoDetailInputSchema =
 	updateBingoDetailsSchema.shape.body.shape.details.element;
 export type BingoDetailInput = z.infer<typeof bingoDetailInputSchema>;

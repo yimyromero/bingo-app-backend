@@ -102,4 +102,33 @@ const updateBingoDetailsById = async (req: Request, res: Response) => {
 		res.status(201).json({ message: "Details updated." });
 	});
 };
-export { getBingoDetailsById, createBingoDetailsById, updateBingoDetailsById };
+
+/**
+ * Update on a cell of a bingo detail
+ * @route PATCH /bingo/:bingoId/details/:detailId/cell
+ */
+const updateBingoDetailCell = async (req: Request, res: Response) => {
+	const { bingoId, detailId } = req.params;
+	const { participantName } = req.body;
+
+	// no checking if participantName is in the body
+
+	const [updateCell] = await dbConn
+		.update(bingoDetails)
+		.set({ participantName: participantName })
+		.where(
+			and(
+				eq(bingoDetails.id, Number(detailId)),
+				eq(bingoDetails.bingoId, Number(bingoId))
+			)
+		)
+		.returning();
+
+	return res.status(201).json(updateCell);
+};
+export {
+	getBingoDetailsById,
+	createBingoDetailsById,
+	updateBingoDetailsById,
+	updateBingoDetailCell,
+};
