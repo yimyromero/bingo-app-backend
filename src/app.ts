@@ -14,6 +14,7 @@ import { userRouter } from "./routes/userRoutes.ts";
 import { errorHandler } from "./middleware/errorHandler.ts";
 import { bingoRouter } from "./routes/bingoRoutes.ts";
 import { bingoDetailsRouter } from "./routes/bingoDetailsRoutes.ts";
+import { authRouter } from "./routes/authRoutes.ts";
 
 const __dirname = getDirname(import.meta.url);
 
@@ -40,6 +41,7 @@ app.use("/", express.static(path.join(__dirname, "public")));
 
 app.get("/", router);
 
+app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/bingos", bingoRouter);
 app.use("/bingo-details", bingoDetailsRouter);
