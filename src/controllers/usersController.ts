@@ -3,7 +3,6 @@ import { users } from "@/models/users.ts";
 import { eq, getTableColumns } from "drizzle-orm";
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import type { number } from "zod";
 
 // @desc Get all users
 // @route GET /users
