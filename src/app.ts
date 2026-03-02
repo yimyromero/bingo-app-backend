@@ -25,7 +25,11 @@ app.use(cors());
 
 app.use(bodyParser.json());
 // logger
-app.use(morgan("dev"));
+app.use(
+	morgan(
+		':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length]"'
+	)
+);
 
 // limiter
 app.use(rateLimiter);

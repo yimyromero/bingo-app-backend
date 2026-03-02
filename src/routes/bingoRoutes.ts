@@ -1,6 +1,7 @@
 import express from "express";
 import * as bingosController from "@/controllers/bingosController.ts";
 import { validate } from "@/middleware/validate.ts";
+import { verifyJWT } from "@/middleware/verifyJWT.ts";
 import {
 	createBingoSchema,
 	updateBingoDetailCellSchema,
@@ -10,6 +11,8 @@ import { bingoDetailsRouter } from "./bingoDetailsRoutes.ts";
 import { updateBingoDetailCell } from "@/controllers/bingoDetailsController.ts";
 
 const bingoRouter = express.Router();
+
+bingoRouter.use(verifyJWT);
 
 bingoRouter
 	.route("/")

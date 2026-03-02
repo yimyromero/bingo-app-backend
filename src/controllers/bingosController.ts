@@ -3,6 +3,7 @@ import { bingoDetails } from "@/models/bingo_details.ts";
 import { bingos } from "@/models/bingos.ts";
 import { users } from "@/models/users.ts";
 import { paginationSchema } from "@/schemas/paginationSchema.ts";
+import { getAccessibleBingos } from "@/services/BingoService.ts";
 import { isArrayEmpty } from "@/utils/utils.ts";
 import { eq } from "drizzle-orm";
 import type { Request, Response } from "express";
@@ -22,16 +23,24 @@ const getAllBingos = async (req: Request, res: Response) => {
 		});
 	}
 
-	const { offset, limit } = parsed.data;
+	try {
+		const result = await getAccessibleBingos(req, parsed.data);
+		const { offset, limit } = parsed.data;
+		res.json({ data: result, meta: { offset, limit } });
+	} catch (err) {
+		res.status(500).json({ message: "Server error" });
+	}
 
-	const result = await dbConn
-		.select()
-		.from(bingos)
-		.limit(limit)
-		.offset(offset)
-		.orderBy(bingos.id);
+	// const { offset, limit } = parsed.data;
 
-	res.json({ data: result, meta: { offset, limit } });
+	// const result = await dbConn
+	// 	.select()
+	// 	.from(bingos)
+	// 	.limit(limit)
+	// 	.offset(offset)
+	// 	.orderBy(bingos.id);
+
+	// res.json({ data: result, meta: { offset, limit } });
 };
 
 /**
