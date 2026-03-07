@@ -15,13 +15,14 @@ import { errorHandler } from "./middleware/errorHandler.ts";
 import { bingoRouter } from "./routes/bingoRoutes.ts";
 import { bingoDetailsRouter } from "./routes/bingoDetailsRoutes.ts";
 import { authRouter } from "./routes/authRoutes.ts";
+import { corsOptions } from "./config/corsOptions.ts";
 
 const __dirname = getDirname(import.meta.url);
 
 const app = express();
 
 // cors
-app.use(cors());
+app.use(cors(corsOptions));
 
 app.use(bodyParser.json());
 // logger
