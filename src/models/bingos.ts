@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { relations } from "drizzle-orm";
+//import { relations } from "drizzle-orm";
 import {
 	pgTable,
 	integer,
@@ -27,14 +27,14 @@ export const bingos = pgTable(
 		createdAt: timestamp().defaultNow(),
 	},
 	(table) => [
-		uniqueIndex("user_bingo_title_unique").on(table.userId, table.title),
+		//uniqueIndex("user_bingo_title_unique").on(table.userId, table.title),
 		check("positive_grid_size", sql`${table.gridSize} > 0`),
 	]
 );
 
-export const bingoRelations = relations(bingos, ({ one }) => ({
-	user: one(users, {
-		fields: [bingos.userId],
-		references: [users.id],
-	}),
-}));
+// export const bingoRelations = relations(bingos, ({ one }) => ({
+// 	user: one(users, {
+// 		fields: [bingos.userId],
+// 		references: [users.id],
+// 	}),
+// }));
