@@ -7,6 +7,7 @@ import { getAccessibleBingos } from "@/services/BingoService.ts";
 import { isArrayEmpty } from "@/utils/utils.ts";
 import { eq } from "drizzle-orm";
 import type { Request, Response } from "express";
+import type { AuthRequest } from "@/middleware/verifyJWT.ts";
 import z from "zod";
 
 /**
@@ -84,29 +85,34 @@ const createNewBingo = async (req: Request, res: Response) => {
  * Update a bingo record
  * @route PATCH /bingos
  */
-const updateBingo = async (req: Request, res: Response) => {
-	const { id, userId, title, gridSize, raffleDate, isDone } = req.body;
+const updateBingo = async (req: AuthRequest, res: Response) => {
+	const { id, title, raffleDate, isDone } = req.body;
 
-	const [bingo] = await dbConn.select(id).from(bingos).where(eq(bingos.id, id));
+	const [bingo] = await dbConn.select().from(bingos).where(eq(bingos.id, id));
 
 	if (!bingo) {
 		return res.status(400).json({ message: "bingo record doesn't exist." });
 	}
 
-	bingo.userId = userId;
-	bingo.title = title;
-	bingo.gridSize = gridSize;
-	bingo.raffleDate = raffleDate;
-	bingo.isDone = isDone;
+	// only the owner or an admin can edit
+	if (req.user?.role !== "admin" && bingo.userId !== Number(req.user?.id)) {
+		return res.status(403).json({ message: "Forbidden." });
+	}
 
-	const [updatedBingo]: { updatedId: Number }[] = await dbConn
+	// owner and grid size are not editable here
+	const [updatedBingo] = await dbConn
 		.update(bingos)
-		.set(bingo)
+		.set({
+			title,
+			raffleDate: raffleDate ? new Date(raffleDate) : bingo.raffleDate,
+			isDone: isDone ?? bingo.isDone,
+		})
 		.where(eq(bingos.id, id))
-		.returning({ updatedId: bingos.id });
+		.returning();
 
 	res.json({
-		message: `bingo ${updatedBingo?.updatedId} updated.`,
+		message: `bingo ${updatedBingo?.id} updated.`,
+		data: updatedBingo,
 	});
 };
 
