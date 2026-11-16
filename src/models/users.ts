@@ -18,4 +18,6 @@ export const users = pgTable("users", {
 	roles: rolesEnum().default("user"),
 	created_at: timestamp().defaultNow(),
 	active: boolean().default(true),
+	// bumped to revoke every access/refresh token issued before it
+	token_version: integer().notNull().default(0),
 });

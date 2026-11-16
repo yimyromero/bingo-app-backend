@@ -4,16 +4,19 @@ import bcrypt from "bcrypt";
 import { users } from "@/models/users.ts";
 import { dbConn } from "@/config/dbConn.ts";
 import { eq } from "drizzle-orm";
+import { consumeResetToken } from "@/services/PasswordResetService.ts";
 
 interface RefreshPayload extends JwtPayload {
 	id: number;
+	tv?: number;
 }
 
 // @desc Login
 // @route POST /auth
 // @access Public
 const login = async (req: Request, res: Response) => {
-	const { email, password } = req.body;
+	const { email, password, rememberMe } = req.body;
+	const keepSignedIn = rememberMe === true;
 
 	const JWT_ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 	const JWT_REFRESH_TOKEN = process.env.REFRESH_TOKEN_SECRET as string;
@@ -40,21 +43,23 @@ const login = async (req: Request, res: Response) => {
 	}
 
 	const accessToken = jwt.sign(
-		{ userInfo: { id: user.id, role: user.roles } },
+		{ userInfo: { id: user.id, role: user.roles }, tv: user.token_version },
 		JWT_ACCESS_SECRET,
 		{ algorithm: "HS256", expiresIn: "15m" }
 	);
 
 	/** generate access refresh token  */
-	const refreshToken = jwt.sign({ id: user.id }, JWT_REFRESH_TOKEN, {
-		expiresIn: "7d",
+	// "keep me signed in": 30 day persistent cookie.
+	// Otherwise a session cookie (cleared when the browser closes), capped at 1 day.
+	const refreshToken = jwt.sign({ id: user.id, tv: user.token_version }, JWT_REFRESH_TOKEN, {
+		expiresIn: keepSignedIn ? "30d" : "1d",
 	});
 
 	res.cookie("jwt", refreshToken, {
 		httpOnly: true,
 		secure: process.env.NODE_ENV === "production",
 		sameSite: process.env.NODE_ENV === "production",
-		maxAge: 7 * 24 * 60 * 60 * 1000,
+		...(keepSignedIn ? { maxAge: 30 * 24 * 60 * 60 * 1000 } : {}),
 	});
 
 	res.json({ accessToken });
@@ -72,17 +77,24 @@ const refresh = async (req: Request, res: Response) => {
 
 	const refreshToken = cookies.jwt;
 
-	const decoded = jwt.verify(
-		refreshToken,
-		process.env.REFRESH_TOKEN_SECRET as string
-	) as RefreshPayload;
+	let decoded: RefreshPayload;
+	try {
+		decoded = jwt.verify(
+			refreshToken,
+			process.env.REFRESH_TOKEN_SECRET as string
+		) as RefreshPayload;
+	} catch (err) {
+		// expired or tampered refresh token
+		return res.status(403).json({ message: "Unauthorized." });
+	}
 
 	const [user] = await dbConn
 		.select()
 		.from(users)
 		.where(eq(users.id, decoded.id));
 
-	if (!user || !user.active) {
+	// disabled account, or session revoked (deactivation / password reset)
+	if (!user || !user.active || user.token_version !== decoded.tv) {
 		return res.status(403).json({ message: "Unauthorized." });
 	}
 
@@ -92,6 +104,7 @@ const refresh = async (req: Request, res: Response) => {
 				id: user.id,
 				role: user.roles,
 			},
+			tv: user.token_version,
 		},
 		process.env.ACCESS_TOKEN_SECRET as string,
 		{ algorithm: "HS256", expiresIn: "15m" }
@@ -110,4 +123,21 @@ const logout = async (req: Request, res: Response) => {
 	res.json({ message: "Cookies cleared" });
 };
 
-export { login, refresh, logout };
+// @desc Set a new password with an emailed reset token
+// @route POST /auth/reset-password
+// @access Public - authorized by the single-use token
+const resetPassword = async (req: Request, res: Response) => {
+	const { token, newPassword } = req.body;
+
+	const ok = await consumeResetToken(token, newPassword);
+
+	if (!ok) {
+		return res
+			.status(400)
+			.json({ message: "This reset link is invalid or has expired." });
+	}
+
+	res.json({ message: "Password updated." });
+};
+
+export { login, refresh, logout, resetPassword };
