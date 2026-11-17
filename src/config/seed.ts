@@ -116,12 +116,18 @@ async function seedUsersAndBingos() {
 		.from(bingos);
 
 	const bingoDetailsToInsert = bingosResults.flatMap((bingo) =>
-		Array.from({ length: bingo.gridSize }, (_, index) => ({
-			bingoId: bingo.id,
-			cellNumber: index + 1,
-			participantName:
-				Math.random() > NAME_PROBABILITY ? faker.person.fullName() : null,
-		}))
+		Array.from({ length: bingo.gridSize }, (_, index) => {
+			const participantName =
+				Math.random() > NAME_PROBABILITY ? faker.person.fullName() : null;
+			return {
+				bingoId: bingo.id,
+				cellNumber: index + 1,
+				participantName,
+				takenAt: participantName
+					? faker.date.recent({ days: 14 })
+					: null,
+			};
+		})
 	);
 
 	await dbConn.insert(bingoDetails).values(bingoDetailsToInsert);

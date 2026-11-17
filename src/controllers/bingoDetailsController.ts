@@ -2,9 +2,20 @@ import { dbConn } from "@/config/dbConn.ts";
 import { bingoDetails } from "@/models/bingo_details.ts";
 import { bingos } from "@/models/bingos.ts";
 import { isArrayEmpty } from "@/utils/utils.ts";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import type { Request, Response } from "express";
 import type { BingoDetailInput } from "@/schemas/bingoSchema.ts";
+
+/**
+ * Columns to set whenever a cell's participant changes.
+ * taken_at is set when the spot becomes taken, kept while it stays taken
+ * (e.g. a name edit) and cleared when the spot is freed.
+ */
+const participantChange = (participantName: string | null) => ({
+	participantName,
+	takenAt: sql`CASE WHEN btrim(coalesce(${participantName}::varchar, '')) = '' THEN NULL ELSE COALESCE(${bingoDetails.takenAt}, now()) END`,
+	updatedAt: sql`now()`,
+});
 
 /**
  * Get details(cells) for one bingo
@@ -45,7 +56,11 @@ const createBingoDetailsById = async (req: Request, res: Response) => {
 			.json({ message: "The bingo ID and details are required." });
 	}
 
-	const rows = details.map((row: BingoDetailInput) => ({ bingoId, ...row }));
+	const rows = details.map((row: BingoDetailInput) => ({
+		bingoId,
+		...row,
+		takenAt: row.participantName?.trim() ? new Date() : null,
+	}));
 
 	const [created] = await dbConn.insert(bingoDetails).values(rows).returning();
 
@@ -90,7 +105,7 @@ const updateBingoDetailsById = async (req: Request, res: Response) => {
 			details.map((row: BingoDetailInput) =>
 				tx
 					.update(bingoDetails)
-					.set({ participantName: row.participantName })
+					.set(participantChange(row.participantName))
 					.where(
 						and(
 							eq(bingoDetails.bingoId, bingoId),
@@ -115,7 +130,7 @@ const updateBingoDetailCell = async (req: Request, res: Response) => {
 
 	const [updateCell] = await dbConn
 		.update(bingoDetails)
-		.set({ participantName: participantName })
+		.set(participantChange(participantName))
 		.where(
 			and(
 				eq(bingoDetails.id, Number(detailId)),

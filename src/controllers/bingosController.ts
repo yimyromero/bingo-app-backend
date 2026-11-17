@@ -3,7 +3,10 @@ import { bingoDetails } from "@/models/bingo_details.ts";
 import { bingos } from "@/models/bingos.ts";
 import { users } from "@/models/users.ts";
 import { paginationSchema } from "@/schemas/paginationSchema.ts";
-import { getAccessibleBingos } from "@/services/BingoService.ts";
+import {
+	getAccessibleBingos,
+	getDashboardSummary,
+} from "@/services/BingoService.ts";
 import { isArrayEmpty } from "@/utils/utils.ts";
 import { eq } from "drizzle-orm";
 import type { Request, Response } from "express";
@@ -42,6 +45,15 @@ const getAllBingos = async (req: Request, res: Response) => {
 	// 	.orderBy(bingos.id);
 
 	// res.json({ data: result, meta: { offset, limit } });
+};
+
+/**
+ * Dashboard summary for the current user
+ * @route GET /bingos/summary
+ */
+const getBingoSummary = async (req: AuthRequest, res: Response) => {
+	const data = await getDashboardSummary(req);
+	res.json({ data });
 };
 
 /**
@@ -135,4 +147,4 @@ const deleteBingo = async (req: Request, res: Response) => {
 	res.json({ message: `Bingo ${deletedBingo.deletedId} deleted.` });
 };
 
-export { getAllBingos, createNewBingo, updateBingo, deleteBingo };
+export { getBingoSummary, getAllBingos, createNewBingo, updateBingo, deleteBingo };

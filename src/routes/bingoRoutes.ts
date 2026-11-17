@@ -14,6 +14,8 @@ const bingoRouter = express.Router();
 
 bingoRouter.use(verifyJWT);
 
+bingoRouter.get("/summary", bingosController.getBingoSummary);
+
 bingoRouter
 	.route("/")
 	.get(bingosController.getAllBingos)
