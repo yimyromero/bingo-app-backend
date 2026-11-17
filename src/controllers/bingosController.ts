@@ -2,7 +2,7 @@ import { dbConn } from "@/config/dbConn.ts";
 import { bingoDetails } from "@/models/bingo_details.ts";
 import { bingos } from "@/models/bingos.ts";
 import { users } from "@/models/users.ts";
-import { paginationSchema } from "@/schemas/paginationSchema.ts";
+import { bingoListSchema } from "@/schemas/bingoListSchema.ts";
 import {
 	getAccessibleBingos,
 	getDashboardSummary,
@@ -18,19 +18,19 @@ import z from "zod";
  * @route GET /bingos
  */
 const getAllBingos = async (req: Request, res: Response) => {
-	const parsed = paginationSchema.safeParse(req.query);
+	const parsed = bingoListSchema.safeParse(req.query);
 
 	if (!parsed.success) {
 		return res.status(400).json({
-			message: "Invalid pagination parameters.",
+			message: "Invalid list parameters.",
 			errors: z.treeifyError(parsed.error),
 		});
 	}
 
 	try {
-		const result = await getAccessibleBingos(req, parsed.data);
+		const { rows, total } = await getAccessibleBingos(req, parsed.data);
 		const { offset, limit } = parsed.data;
-		res.json({ data: result, meta: { offset, limit } });
+		res.json({ data: rows, meta: { offset, limit, total } });
 	} catch (err) {
 		res.status(500).json({ message: "Server error" });
 	}
@@ -45,6 +45,29 @@ const getAllBingos = async (req: Request, res: Response) => {
 	// 	.orderBy(bingos.id);
 
 	// res.json({ data: result, meta: { offset, limit } });
+};
+
+/**
+ * Get one bingo record (owner or admin)
+ * @route GET /bingos/:bingoId
+ */
+const getBingoById = async (req: AuthRequest, res: Response) => {
+	const id = Number(req.params.bingoId);
+	if (!Number.isInteger(id) || id <= 0) {
+		return res.status(400).json({ message: "Invalid bingo ID." });
+	}
+
+	const [bingo] = await dbConn.select().from(bingos).where(eq(bingos.id, id));
+
+	if (!bingo) {
+		return res.status(404).json({ message: "Bingo not found." });
+	}
+
+	if (req.user?.role !== "admin" && bingo.userId !== Number(req.user?.id)) {
+		return res.status(403).json({ message: "Forbidden." });
+	}
+
+	res.json({ data: bingo });
 };
 
 /**
@@ -128,23 +151,17 @@ const updateBingo = async (req: AuthRequest, res: Response) => {
 	});
 };
 
-const deleteBingo = async (req: Request, res: Response) => {
-	const { id } = req.body;
+const deleteBingo = async (req: AuthRequest, res: Response) => {
+	const id = Number(req.params.bingoId);
 
-	if (!id) {
-		return res.status(400).json({ message: "Bingo id is required." });
-	}
+	// access (owner or admin) is checked by requireBingoAccess.
+	// the cells reference the bingo, so they go first.
+	await dbConn.transaction(async (tx) => {
+		await tx.delete(bingoDetails).where(eq(bingoDetails.bingoId, id));
+		await tx.delete(bingos).where(eq(bingos.id, id));
+	});
 
-	const [deletedBingo]: { deletedId: Number }[] = await dbConn
-		.delete(bingos)
-		.where(eq(bingos.id, id))
-		.returning({ deletedId: bingos.id });
-
-	if (!deletedBingo) {
-		return res.status(400).json({ message: `Bingo id:${id} doesn't exist.` });
-	}
-
-	res.json({ message: `Bingo ${deletedBingo.deletedId} deleted.` });
+	res.json({ message: `Bingo ${id} deleted.` });
 };
 
-export { getBingoSummary, getAllBingos, createNewBingo, updateBingo, deleteBingo };
+export { getBingoById, getBingoSummary, getAllBingos, createNewBingo, updateBingo, deleteBingo };

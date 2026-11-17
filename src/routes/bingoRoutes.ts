@@ -1,6 +1,7 @@
 import express from "express";
 import * as bingosController from "@/controllers/bingosController.ts";
 import { validate } from "@/middleware/validate.ts";
+import { requireBingoAccess } from "@/middleware/requireBingoAccess.ts";
 import { verifyJWT } from "@/middleware/verifyJWT.ts";
 import {
 	createBingoSchema,
@@ -20,12 +21,17 @@ bingoRouter
 	.route("/")
 	.get(bingosController.getAllBingos)
 	.post(validate(createBingoSchema), bingosController.createNewBingo)
-	.patch(validate(updateBingoSchema), bingosController.updateBingo)
-	.delete(bingosController.deleteBingo);
+	.patch(validate(updateBingoSchema), bingosController.updateBingo);
 
-bingoRouter.use("/:bingoId/details", bingoDetailsRouter);
+bingoRouter
+	.route("/:bingoId")
+	.get(bingosController.getBingoById)
+	.delete(requireBingoAccess, bingosController.deleteBingo);
+
+bingoRouter.use("/:bingoId/details", requireBingoAccess, bingoDetailsRouter);
 bingoRouter.use(
 	"/:bingoId/details/:detailId/cell",
+	requireBingoAccess,
 	validate(updateBingoDetailCellSchema),
 	updateBingoDetailCell
 );

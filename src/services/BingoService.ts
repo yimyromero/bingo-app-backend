@@ -1,40 +1,68 @@
 import type { Request } from "express";
-import type { Pagination } from "@/schemas/paginationSchema.ts";
+import type { BingoListQuery } from "@/schemas/bingoListSchema.ts";
 import type { AuthRequest } from "@/middleware/verifyJWT.ts";
 import { dbConn } from "@/config/dbConn.ts";
 import { bingos } from "@/models/bingos.ts";
 import { bingoDetails } from "@/models/bingo_details.ts";
-import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ilike, isNotNull, lt, sql } from "drizzle-orm";
 
-export const getAccessibleBingos = async (
-	req: AuthRequest,
-	pagination: Pagination
-) => {
-	const { offset, limit } = pagination;
-
-	const filter = buildOwnershipFilter(req.user);
-
-	return await dbConn
-		.select()
-		.from(bingos)
-		.limit(limit)
-		.offset(offset)
-		.where(
-			and(
-				req.user?.role !== "admin"
-					? eq(bingos.userId, Number(req.user?.id))
-					: undefined
-			)
-		)
-		.orderBy(bingos.id);
+const nextDay = (date: string) => {
+	const d = new Date(`${date}T00:00:00`);
+	d.setDate(d.getDate() + 1);
+	return d;
 };
 
-const buildOwnershipFilter = (user: any) => {
-	if (user?.role === "admin") {
-		return undefined;
-	}
+const sortColumns = {
+	createdAt: bingos.createdAt,
+	title: bingos.title,
+	raffleDate: bingos.raffleDate,
+	gridSize: bingos.gridSize,
+};
 
-	return { owner: user?.id };
+/**
+ * One page of the bingos the user can see (all for admins), with the
+ * total matching rows so the client can paginate.
+ */
+export const getAccessibleBingos = async (
+	req: AuthRequest,
+	query: BingoListQuery
+) => {
+	const { offset, limit, search, status, sort, order, raffleFrom, raffleTo } =
+		query;
+
+	// escape LIKE wildcards so the search text is matched literally
+	const escaped = search?.replace(/[\\%_]/g, "\\$&");
+
+	const where = and(
+		req.user?.role !== "admin"
+			? eq(bingos.userId, Number(req.user?.id))
+			: undefined,
+		escaped ? ilike(bingos.title, `%${escaped}%`) : undefined,
+		status === "active" ? eq(bingos.isDone, false) : undefined,
+		status === "finished" ? eq(bingos.isDone, true) : undefined,
+		raffleFrom ? gte(bingos.raffleDate, new Date(`${raffleFrom}T00:00:00`)) : undefined,
+		// the end day is included, so compare against the start of the next day
+		raffleTo ? lt(bingos.raffleDate, nextDay(raffleTo)) : undefined
+	);
+
+	const direction = order === "asc" ? asc : desc;
+
+	const [rows, totals] = await Promise.all([
+		dbConn
+			.select()
+			.from(bingos)
+			.where(where)
+			// id as tiebreaker keeps pages stable
+			.orderBy(direction(sortColumns[sort]), direction(bingos.id))
+			.limit(limit)
+			.offset(offset),
+		dbConn
+			.select({ total: count() })
+			.from(bingos)
+			.where(where),
+	]);
+
+	return { rows, total: totals[0]?.total ?? 0 };
 };
 
 /**
